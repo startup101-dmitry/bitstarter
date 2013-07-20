@@ -6,6 +6,9 @@ and basic DOM parsing.
 
 References:
 
+ + restler
+   - https://github.com/danwrong/restler
+   
  + cheerio
    - https://github.com/MatthewMueller/cheerio
    - http://encosia.com/cheerio-faster-windows-friendly-alternative-jsdom/
@@ -24,8 +27,11 @@ References:
 var fs = require('fs');
 var program = require('commander');
 var cheerio = require('cheerio');
+var restler = require('restler');
+//var util = require('util');
 var HTMLFILE_DEFAULT = "index.html";
 var CHECKSFILE_DEFAULT = "checks.json";
+var URL_DEFAULT = "http://google.com"
 
 var assertFileExists = function(infile) {
     var instr = infile.toString();
@@ -55,6 +61,15 @@ var checkHtmlFile = function(htmlfile, checksfile) {
     return out;
 };
 
+//var checkUrl = function(url, checksfile){}; //Won't even need this, made another way through grabHtmlfromUrl
+var grabHtmlfromUrl = function(urlstring) {
+    restler.get(urlstring).on('complete', function(data) {
+    var urlBuffer = new Buffer(data, "utf-8");
+	var urlBufferToString = urlBuffer.toString('utf-8');
+    });
+};
+
+
 var clone = function(fn) {
     // Workaround for commander.js issue.
     // http://stackoverflow.com/a/6772648
@@ -65,8 +80,15 @@ if(require.main == module) {
     program
         .option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
         .option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists), HTMLFILE_DEFAULT)
+        .option('-u, --url <web_address>', 'Web address', clone(grabHtmlfromUrl), URL_DEFAULT)
         .parse(process.argv);
-    var checkJson = checkHtmlFile(program.file, program.checks);
+        
+    if(program.file.length){ //File gets first priority in input
+        var checkJson = checkHtmlFile(program.file, program.checks); 
+    } else {
+        //var checkJson = checkUrl(program.url, program.checks);
+        var checkJson = checkHtmlFile(program.url, program.checks);
+    }
     var outJson = JSON.stringify(checkJson, null, 4);
     console.log(outJson);
 } else {
